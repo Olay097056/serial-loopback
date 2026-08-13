@@ -1,0 +1,17 @@
+# Build output — compile from source, or grab a binary from Releases
+*.exe
+*.pdb
+bin/
+obj/
+
+# Exported test results
+loopback_*.csv
+
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+.vs/
+.DS_Store
+Thumbs.db
