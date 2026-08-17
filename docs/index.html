@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>serial-loopback — UI walkthrough</title>
+<meta name="description" content="เดินดูหน้าตาและสถานะของเครื่องมือทดสอบพอร์ต serial โดยไม่ต้องมีฮาร์ดแวร์">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0D1117;--panel:#161E2D;--panel-2:#1E283C;--edge:#32415A;
+  --txt:#E2E8F0;--dim:#64748B;
+  --green:#34D399;--green-bg:#0F3C2D;
+  --amber:#FBBF24;--amber-bg:#372A0A;
+  --red:#F87171;--red-bg:#3C0F0F;
+  --blue:#60A5FA;--blue-bg:#0F2850;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --sans:"IBM Plex Sans Thai","IBM Plex Sans",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ink);color:var(--txt);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:34px 22px 80px}
+a{color:var(--green)}
+h1{font-family:var(--mono);font-size:1.55rem;font-weight:600;letter-spacing:-.02em;margin-top:14px}
+.sub{color:var(--dim);margin-top:8px;max-width:64ch}
+.back{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;color:var(--dim);text-decoration:none}
+.back:hover{color:var(--txt)}
+
+.warnbox{
+  margin-top:18px;border:1px solid #4A3A12;background:var(--amber-bg);
+  padding:12px 15px;border-radius:3px;font-size:.9rem;color:#F5D98B;
+}
+.warnbox b{color:var(--amber)}
+
+.panel{border:1px solid var(--edge);background:var(--panel);border-radius:4px;padding:18px;margin-top:22px}
+.panel h2{font-family:var(--mono);font-size:.75rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:14px}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+button{font-family:var(--mono);font-size:.75rem;letter-spacing:.06em;padding:8px 15px;border-radius:3px;cursor:pointer;border:1px solid var(--edge);background:var(--panel-2);color:var(--txt);transition:border-color .2s,background .2s}
+button:hover:not(:disabled){border-color:var(--dim)}
+button:disabled{opacity:.45;cursor:default}
+button.on{background:var(--blue-bg);border-color:#1D4B8F;color:var(--blue)}
+button.go{background:var(--green-bg);border-color:#155E43;color:var(--green)}
+
+/* app replica */
+.app{border:1px solid var(--edge);border-radius:4px;overflow:hidden;margin-top:22px;background:var(--panel)}
+.appbar{display:flex;align-items:center;gap:10px;padding:11px 15px;background:var(--panel-2);border-bottom:1px solid var(--edge)}
+.appbar .t{font-family:var(--mono);font-size:.8rem;font-weight:600;letter-spacing:.04em}
+.appbar .port{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-left:auto}
+
+.banner{padding:13px 15px;font-family:var(--mono);font-size:.85rem;border-bottom:1px solid var(--edge);transition:background .3s,color .3s}
+.banner.idle{background:var(--ink);color:var(--dim)}
+.banner.testing{background:var(--blue-bg);color:var(--blue)}
+.banner.pass{background:var(--green-bg);color:var(--green)}
+.banner.warn,.banner.noloop{background:var(--amber-bg);color:var(--amber)}
+.banner.fail{background:var(--red-bg);color:var(--red)}
+.banner .s2{display:block;font-size:.72rem;opacity:.8;margin-top:3px}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.half{padding:0}
+.half + .half{border-left:1px solid var(--edge)}
+.halfhead{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);padding:9px 14px;border-bottom:1px solid var(--edge);background:var(--ink)}
+
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.76rem}
+th{text-align:left;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:600;padding:6px 14px;border-bottom:1px solid rgba(50,65,90,.5)}
+td{padding:6px 14px;border-bottom:1px solid rgba(50,65,90,.28)}
+td.st{font-weight:600}
+.st.pass{color:var(--green)} .st.warn{color:var(--amber)} .st.fail{color:var(--red)}
+.st.testing{color:var(--blue)} .st.idle{color:var(--dim)} .st.noloop{color:var(--amber)}
+tr.active{background:rgba(15,40,80,.32)}
+
+.log{height:268px;overflow:auto;padding:10px 14px;font-family:var(--mono);font-size:.72rem;line-height:1.85;color:#9FB0C6}
+.log div{white-space:pre-wrap}
+.log .hi{color:var(--green)}
+.log .wa{color:var(--amber)}
+.log .er{color:var(--red)}
+
+footer{margin-top:34px;font-family:var(--mono);font-size:.68rem;color:var(--dim);line-height:1.9;border-top:1px solid rgba(50,65,90,.45);padding-top:16px}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+@media (max-width:720px){.split{grid-template-columns:1fr}.half+.half{border-left:0;border-top:1px solid var(--edge)}}
+@media (max-width:560px){.wrap{padding:24px 15px 60px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="https://github.com/Olay097056/serial-loopback">&larr; GITHUB REPO</a>
+  <h1>serial-loopback</h1>
+  <p class="sub">เครื่องมือไล่ทดสอบพอร์ต COM ครบ 11 baud rate ผ่าน loopback plug — หน้านี้ให้เดินดูหน้าตาและสถานะของมันโดยไม่ต้องมีฮาร์ดแวร์</p>
+
+  <div class="warnbox">
+    <b>นี่คือการจำลองหน้าตา ไม่ใช่การทดสอบจริง</b><br>
+    เครื่องมือตัวจริงต้องมีพอร์ต serial และ loopback plug เสียบอยู่ — เบราว์เซอร์เปิดพอร์ตแบบนั้นไม่ได้
+    ตัวเลขบนหน้านี้เป็นค่าที่เขียนไว้ล่วงหน้าตามสถานการณ์ที่เลือก ไม่ได้วัดจากอุปกรณ์ใดทั้งสิ้น
+    สิ่งที่ของจริงมีเหมือนกันคือ<strong>ลำดับการทำงานและสถานะ</strong> — โดยเฉพาะการตรวจหา plug ก่อนเริ่มไล่ทดสอบ
+  </div>
+
+  <div class="panel">
+    <h2>เลือกสถานการณ์</h2>
+    <div class="row">
+      <button data-sc="good" class="on" type="button">พอร์ตปกติ</button>
+      <button data-sc="flaky" type="button">เพี้ยนที่ความเร็วสูง</button>
+      <button data-sc="noloop" type="button">ลืมเสียบ plug</button>
+      <button data-sc="dead" type="button">พอร์ตเสีย</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="go" id="run" type="button">เริ่มทดสอบ</button>
+      <button id="stop" type="button" disabled>หยุด</button>
+    </div>
+  </div>
+
+  <div class="app">
+    <div class="appbar">
+      <span class="t">Serial Loopback Test PRO</span>
+      <span class="port" id="port">COM3 — Prolific USB-to-Serial</span>
+    </div>
+    <div class="banner idle" id="banner">พร้อมทดสอบ<span class="s2" id="banner2">กดเริ่มทดสอบเพื่อดูลำดับการทำงาน</span></div>
+    <div class="split">
+      <div class="half">
+        <div class="halfhead">ผลรายความเร็ว</div>
+        <table><thead><tr><th>Baud</th><th>สถานะ</th><th>ส่ง/รับ</th><th>ผิดพลาด</th></tr></thead>
+        <tbody id="tb"></tbody></table>
+      </div>
+      <div class="half">
+        <div class="halfhead">บันทึกการทำงาน</div>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div>ของจริงคอมไพล์เป็น .exe ไฟล์เดียว ~40 KB บน .NET 3.5 / x86 รันบน Windows XP SP2 ขึ้นไปโดยไม่ต้องติดตั้งอะไร</div>
+    <div>มีเวอร์ชัน Python (customtkinter + matplotlib) สำหรับเครื่องสมัยใหม่อยู่ใน repo เดียวกัน</div>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var BAUDS = [1200,2400,4800,9600,19200,38400,57600,115200,230400,460800,921600];
+
+  /* Fixed, hand-written outcomes per scenario — deterministic on purpose,
+     so nothing here can be mistaken for a measurement. */
+  var SCENARIOS = {
+    good:   {loop:true,  cut:Infinity, warnFrom:Infinity},
+    flaky:  {loop:true,  cut:460800,   warnFrom:115200},
+    dead:   {loop:false, cut:0,        warnFrom:0, error:true},
+    noloop: {loop:false, cut:0,        warnFrom:0}
+  };
+
+  var sc = "good", timer = null, running = false;
+  var tally = {pass:0, warn:0, fail:0};   /* counted from what actually rendered */
+
+  var $ = function(id){ return document.getElementById(id); };
+
+  function resetTable(){
+    var h = "";
+    BAUDS.forEach(function(b){
+      h += '<tr data-b="' + b + '"><td>' + b.toLocaleString() + '</td>'
+         + '<td class="st idle">—</td><td style="color:var(--dim)">—</td><td style="color:var(--dim)">—</td></tr>';
+    });
+    $("tb").innerHTML = h;
+  }
+
+  function setBanner(cls, main, sub){
+    var b = $("banner");
+    b.className = "banner " + cls;
+    b.innerHTML = main + '<span class="s2">' + sub + "</span>";
+  }
+
+  function log(msg, cls){
+    var d = document.createElement("div");
+    if (cls) d.className = cls;
+    d.textContent = msg;
+    $("log").appendChild(d);
+    $("log").scrollTop = $("log").scrollHeight;
+  }
+
+  function row(b){ return $("tb").querySelector('tr[data-b="' + b + '"]'); }
+
+  function setRow(b, state, label, io, err){
+    var tr = row(b);
+    if (!tr) return;
+    var td = tr.children;
+    td[1].className = "st " + state;
+    td[1].textContent = label;
+    td[2].textContent = io;
+    td[3].textContent = err;
+  }
+
+  function stop(finalCls, finalMain, finalSub){
+    running = false;
+    clearTimeout(timer);
+    $("run").disabled = false;
+    $("stop").disabled = true;
+    document.querySelectorAll("[data-sc]").forEach(function(x){ x.disabled = false; });
+    if (finalMain) setBanner(finalCls, finalMain, finalSub);
+  }
+
+  function start(){
+    if (running) return;
+    running = true;
+    $("run").disabled = true;
+    $("stop").disabled = false;
+    document.querySelectorAll("[data-sc]").forEach(function(x){ x.disabled = true; });
+    $("log").innerHTML = "";
+    resetTable();
+    tally = {pass:0, warn:0, fail:0};
+
+    var s = SCENARIOS[sc];
+    setBanner("testing", "กำลังตรวจหา loopback plug", "ส่ง A5 5A F0 0F ที่ 9600 แล้วรอ echo กลับ");
+    log("-- เริ่มทดสอบ COM3 --");
+    log("probe: เขียน A5 5A F0 0F ที่ 9600 …");
+
+    timer = setTimeout(function(){
+      if (!running) return;
+
+      if (!s.loop){
+        if (s.error){
+          log("probe: เปิดพอร์ตไม่สำเร็จ — Access denied", "er");
+          BAUDS.forEach(function(b){ setRow(b, "fail", "X  ERROR", "—", "—"); });
+          log("-- หยุด: พอร์ตเปิดไม่ได้ --", "er");
+          stop("fail", "เปิดพอร์ตไม่ได้", "อาจมีโปรแกรมอื่นถือพอร์ตนี้อยู่ หรืออุปกรณ์หลุด");
+        } else {
+          log("probe: ได้ echo กลับ 0 จาก 4 ไบต์", "wa");
+          BAUDS.forEach(function(b){ setRow(b, "noloop", "!! NO LOOP", "—", "—"); });
+          log("-- ไม่พบ loopback บน COM3 — รอ --", "wa");
+          stop("noloop", "ไม่พบ loopback plug",
+               "ไม่ไล่ทดสอบต่อ เพราะถ้าไม่มี plug ผลที่ได้จะเป็น FAIL ทั้งแถวโดยไม่มีความหมาย");
+        }
+        return;
+      }
+
+      log("probe: ได้ echo กลับ 4 จาก 4 ไบต์ — พบ plug", "hi");
+      setBanner("testing", "กำลังไล่ทดสอบ 11 ความเร็ว", "ส่งข้อมูลผ่าน COM3 แล้วเทียบกับที่รับกลับ");
+      sweep(0);
+    }, 900);
+  }
+
+  function sweep(i){
+    if (!running) return;
+    if (i >= BAUDS.length){
+      var clean = BAUDS.filter(function(b){ return b < SCENARIOS[sc].warnFrom && b <= SCENARIOS[sc].cut; });
+      var top = clean.length ? clean[clean.length-1] : 0;
+      if (!tally.warn && !tally.fail){
+        log("-- เสร็จ: ผ่าน " + tally.pass + " จาก " + BAUDS.length + " --", "hi");
+        stop("pass", "ผ่านทุกความเร็ว", "COM3 รับส่งได้ถึง " + BAUDS[BAUDS.length-1].toLocaleString() + " baud");
+      } else {
+        log("-- เสร็จ: ผ่าน " + tally.pass + " · เตือน " + tally.warn + " · ไม่ผ่าน " + tally.fail + " --", "wa");
+        stop("warn", "ใช้ได้ถึง " + top.toLocaleString() + " เท่านั้น",
+             "เหนือจากนั้นเริ่มมีไบต์หาย — สายยาวเกินหรือชิปแปลงสัญญาณเริ่มไม่ไหว");
+      }
+      log("-- คืนพอร์ตให้ระบบแล้ว — เปิด Device Manager ได้ --", "hi");
+      return;
+    }
+
+    var b = BAUDS[i], s = SCENARIOS[sc];
+    var tr = row(b);
+    document.querySelectorAll("tr.active").forEach(function(x){ x.classList.remove("active"); });
+    if (tr) tr.classList.add("active");
+    setRow(b, "testing", ">> Testing", "…", "…");
+
+    timer = setTimeout(function(){
+      if (!running) return;
+      var sent = 512;
+      if (b > s.cut){
+        tally.fail++;
+        setRow(b, "fail", "X  FAIL", sent + "/" + Math.round(sent*0.62), "194");
+        log("baud " + b + ": ไบต์หาย 194 จาก 512", "er");
+      } else if (b >= s.warnFrom){
+        tally.warn++;
+        setRow(b, "warn", "!! WARN", sent + "/" + (sent-3), "3");
+        log("baud " + b + ": ไบต์หาย 3 จาก 512", "wa");
+      } else {
+        tally.pass++;
+        setRow(b, "pass", "OK  PASS", sent + "/" + sent, "0");
+        log("baud " + b + ": ผ่าน");
+      }
+      sweep(i+1);
+    }, 320);
+  }
+
+  document.querySelectorAll("[data-sc]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      document.querySelectorAll("[data-sc]").forEach(function(x){ x.classList.remove("on"); });
+      btn.classList.add("on");
+      sc = btn.getAttribute("data-sc");
+      $("port").textContent = (sc === "dead")
+        ? "COM3 — อุปกรณ์ไม่ตอบสนอง"
+        : "COM3 — Prolific USB-to-Serial";
+      resetTable();
+      $("log").innerHTML = "";
+      setBanner("idle", "พร้อมทดสอบ", "กดเริ่มทดสอบเพื่อดูลำดับการทำงาน");
+    });
+  });
+
+  $("run").addEventListener("click", start);
+  $("stop").addEventListener("click", function(){
+    log("-- กำลังหยุด คืนพอร์ต… --", "wa");
+    stop("idle", "หยุดแล้ว", "คืนพอร์ตให้ระบบเรียบร้อย — เปิด Device Manager ได้");
+  });
+
+  resetTable();
+})();
+</script>
+</body>
+</html>
