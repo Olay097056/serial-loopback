@@ -2,6 +2,15 @@
 
 # Serial Loopback Pro
 
+### ▶ [Walk through the UI in your browser](https://olay097056.github.io/serial-loopback/)
+
+**A simulation, not a measurement.** A browser cannot open a serial port, so the
+numbers are written in advance per scenario — healthy port, degrading above
+115200, missing plug, dead port. What it faithfully shows is the sequence and
+the states, including the loopback probe that runs before any sweep.
+
+---
+
 A serial port diagnostic tool that sweeps a COM port across 11 baud rates with a
 loopback plug attached, and tells you which rates the port can actually carry —
 continuously, with a live pass/warn/fail table.
