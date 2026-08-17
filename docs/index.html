@@ -87,11 +87,11 @@ footer{margin-top:34px;font-family:var(--mono);font-size:.68rem;color:var(--dim)
 <div class="wrap">
   <a class="back" href="https://github.com/Olay097056/serial-loopback">&larr; GITHUB REPO</a>
   <h1>serial-loopback</h1>
-  <p class="sub">เครื่องมือไล่ทดสอบพอร์ต COM ครบ 11 baud rate ผ่าน loopback plug — หน้านี้ให้เดินดูหน้าตาและสถานะของมันโดยไม่ต้องมีฮาร์ดแวร์</p>
+  <p class="sub">เครื่องมือไล่ทดสอบพอร์ต COM ครบ 11 baud rate ผ่าน loopback plug หน้านี้ให้เดินดูหน้าตาและสถานะของมันโดยไม่ต้องมีฮาร์ดแวร์</p>
 
   <div class="warnbox">
     <b>นี่คือการจำลองหน้าตา ไม่ใช่การทดสอบจริง</b><br>
-    เครื่องมือตัวจริงต้องมีพอร์ต serial และ loopback plug เสียบอยู่ — เบราว์เซอร์เปิดพอร์ตแบบนั้นไม่ได้
+    เครื่องมือตัวจริงต้องมีพอร์ต serial และ loopback plug เสียบอยู่ ซึ่งเบราว์เซอร์ทำไม่ได้
     ตัวเลขบนหน้านี้เป็นค่าที่เขียนไว้ล่วงหน้าตามสถานการณ์ที่เลือก ไม่ได้วัดจากอุปกรณ์ใดทั้งสิ้น
     สิ่งที่ของจริงมีเหมือนกันคือ<strong>ลำดับการทำงานและสถานะ</strong> — โดยเฉพาะการตรวจหา plug ก่อนเริ่มไล่ทดสอบ
   </div>
@@ -249,7 +249,7 @@ footer{margin-top:34px;font-family:var(--mono);font-size:.68rem;color:var(--dim)
       } else {
         log("-- เสร็จ: ผ่าน " + tally.pass + " · เตือน " + tally.warn + " · ไม่ผ่าน " + tally.fail + " --", "wa");
         stop("warn", "ใช้ได้ถึง " + top.toLocaleString() + " เท่านั้น",
-             "เหนือจากนั้นเริ่มมีไบต์หาย — สายยาวเกินหรือชิปแปลงสัญญาณเริ่มไม่ไหว");
+             "เหนือจากนั้นเริ่มมีไบต์หาย อาจเป็นเพราะสายยาวเกินหรือชิปแปลงสัญญาณเริ่มไม่ไหว");
       }
       log("-- คืนพอร์ตให้ระบบแล้ว — เปิด Device Manager ได้ --", "hi");
       return;
